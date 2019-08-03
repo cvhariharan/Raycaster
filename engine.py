@@ -1,4 +1,5 @@
 import pygame, math
+import random
 
 class Wall:
     def __init__(self, surface, x1, y1, x2, y2):
@@ -43,11 +44,13 @@ class Ray:
                 px = round(x1 + t*(x2 - x1))
                 py = round(y1 + t*(y2 - y1))
                 # pygame.draw.circle(self.surface, (255, 255, 255), (px, py), 3)
-                self.x2 = px
-                self.y2 = py
+                # self.x2 = px
+                # self.y2 = py
+                return [px, py]
         except ZeroDivisionError:
             pass
-       
+
+        return [-1, -1]
 
 class Player:
     def __init__(self, surface, x1, y1, walls):
@@ -61,10 +64,28 @@ class Player:
         for i in range(360):
             if i % 2 == 0:
                 r = Ray(self.surface, self.x1, self.y1, math.radians(i))
+                min_dist = 1000
+                min_pt = [-1, -1]
                 for j in range(len(self.walls)):
-                    r.cast(self.walls[j])
+                    [px, py] = r.cast(self.walls[j])
+                    d = abs(self.x1 - px) + abs(self.y1 - py)
+                    if d < min_dist:
+                        min_dist = d
+                        min_pt = [px, py]
+
+                # pygame.draw.circle(self.surface, (255, 255, 255), (min_pt[0], min_pt[1]), 5)
+                if min_pt[0] != -1:
+                    r.x2 = min_pt[0]
+                    r.y2 = min_pt[1]
                 r.draw()
 
+
+def maze_generator(n, disp):
+    # Generate random walls
+    walls = []
+    for i in range(n):
+        walls.append(Wall(disp, random.randrange(20, 800), random.randrange(20, 600), random.randrange(20, 800), random.randrange(20, 600)))
+    return walls
 
 pygame.init()
 
@@ -75,10 +96,11 @@ clock = pygame.time.Clock()
 
 crashed = False
 
-w1 = Wall(disp, 50, 50, 50, 200)
-w2 = Wall(disp, 100, 150, 400, 300)
-# r = Ray(disp, 100, 100, math.radians(-45))
-walls = [w1, w2]
+# w1 = Wall(disp, 400, 540, 50, 200)
+# w2 = Wall(disp, 100, 150, 400, 300)
+# walls = [w1, w2]
+r = Ray(disp, 100, 100, math.radians(-45))
+walls = maze_generator(5, disp)
 p = Player(disp, 100, 100, walls)
 while not crashed:
     disp.fill((0, 0, 0))
@@ -86,12 +108,12 @@ while not crashed:
         if event.type == pygame.QUIT:
             crashed = True
         
-        # r.x2 = pygame.mouse.get_pos()[0]
-        # r.y2 = pygame.mouse.get_pos()[1]
+        p.x1 = pygame.mouse.get_pos()[0]
+        p.y1 = pygame.mouse.get_pos()[1]
 
         # print(event)
-    w1.draw()
-    w2.draw()
+    for i in range(len(walls)):
+        walls[i].draw()
     # r.draw()
     p.draw()
     # r.cast(w1)
